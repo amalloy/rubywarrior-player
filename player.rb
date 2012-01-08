@@ -40,9 +40,8 @@ class Player
   end
 
   def scout
-    puts "Before scout: #{@hp_needed}"
     @hp_needed = [@hp_needed, health_needed].max
-    puts "After scout: #{@hp_needed}"
+    puts "HP: #{@hp}, need: #{@hp_needed}"
   end
 
   def play_turn(warrior)
@@ -61,8 +60,6 @@ class Player
     scout
     if warrior.feel.wall?
       warrior.pivot!
-#    if not @captive_rescued
-#      smart_move :backward
     elsif warrior.feel.enemy?
       warrior.attack!
       @fighting = true
