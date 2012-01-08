@@ -1,7 +1,7 @@
 class Player
   def shoot(dir = :forward)
     @warrior.look(dir).take(3).each do |space|
-      if space.enemy?
+      if space.unit.kind_of? RubyWarrior::Units::Wizard
         @warrior.shoot!(dir)
         return true
       elsif !space.empty?
@@ -27,13 +27,13 @@ class Player
     elsif shoot
       # shoot has side effects
     elsif critical and being_attacked
-      warrior.walk!(:backward)
-    elsif wounded and not being_attacked
+      smart_move(:backward)
+    elsif wounded and !being_attacked and @hp < health_needed
       warrior.rest!
     elsif warrior.feel.captive?
       warrior.rescue!
     else
-      warrior.walk!
+      smart_move
     end
   end
 
@@ -63,6 +63,23 @@ class Player
   end
 
   def critical
-    @hp < @maxhp * 5 / 8
+    @hp < @maxhp / 3
+  end
+
+  def health_needed 
+    damage = [:backward, :forward].map do |dir|
+      @warrior.look(dir)
+    end.flatten(1).map do |space|
+      damage_budget(space.unit) || 0
+    end.reduce :+ 
+    damage + 1
+  end
+
+  def damage_budget(u) # how much will killing this hurt?
+    {
+      RubyWarrior::Units::Archer => 9,
+      RubyWarrior::Units::Sludge => 6,
+      RubyWarrior::Units::ThickSludge => 12
+    }[u.class]
   end
 end
