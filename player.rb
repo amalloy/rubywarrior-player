@@ -78,10 +78,23 @@ class Player
       @fighting = true
     elsif wounded and !being_attacked and @hp < @hp_needed
       warrior.rest!
-    elsif warrior.feel.captive?
-      warrior.rescue!
+    elsif get_captive
+      puts "Jailbreak time!"
     else
       smart_move
+    end
+  end
+
+  def captive
+    lambda do |unit|
+      unit.kind_of? RubyWarrior::Units::Captive
+    end
+  end
+
+  def get_captive
+    dir = visible?(captive)
+    if dir
+      smart_move dir
     end
   end
 
@@ -113,7 +126,7 @@ class Player
       @warrior.look(dir).each do |space|
         u = space.unit
         if u && pred[u]
-          return true
+          return dir
         elsif !space.empty?
           break;
         end
