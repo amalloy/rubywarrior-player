@@ -1,7 +1,16 @@
 class Player
   def initialize
     @hp_needed = 0
+    @keep_shooting = 0
     @dirs = [:forward, :backward]
+  end
+
+  def keep_shooting
+    if @keep_shooting > 0
+      @warrior.shoot! @shoot_dir
+      @keep_shooting -= 1
+      true
+    end
   end
 
   def shoot_at(unit)
@@ -9,6 +18,8 @@ class Player
       @warrior.look(dir).take(3).each do |space|
         if space.unit.kind_of? unit
           @warrior.shoot! dir
+          @keep_shooting = arrow_budget(space.unit) - 1
+          @shoot_dir = dir
           return true
         elsif !space.empty?
           break
@@ -55,12 +66,16 @@ class Player
     elsif warrior.feel.enemy?
       warrior.attack!
       @fighting = true
-    elsif shoot
-      puts "shooting"
+    elsif keep_shooting
+      puts "Still shooting"
       @fighting = true
-      # shoot has side effects
+      # I guess we're shooting at him
     elsif critical and being_attacked
+      puts "Retreat!"
       smart_move(:backward)
+    elsif shoot
+      puts "Start shooting"
+      @fighting = true
     elsif wounded and !being_attacked and @hp < @hp_needed
       warrior.rest!
     elsif warrior.feel.captive?
@@ -133,6 +148,13 @@ class Player
       RubyWarrior::Units::Archer => can_shoot ? 6 : 9,
       RubyWarrior::Units::Sludge => 6,
       RubyWarrior::Units::ThickSludge => 12
+    }[u.class]
+  end
+
+  def arrow_budget(u) # how many times do I shoot at this?
+    {
+      RubyWarrior::Units::Archer => 3,
+      RubyWarrior::Units::Wizard => 1
     }[u.class]
   end
 end
