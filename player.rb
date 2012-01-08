@@ -99,9 +99,9 @@ class Player
     end
   end
 
-  def ranged
+  def archer
     lambda do |unit|
-      unit.kind_of? RubyWarrior::Units::Wizard or unit.kind_of? RubyWarrior::Units::Archer
+      unit.kind_of? RubyWarrior::Units::Archer
     end
   end
 
@@ -120,7 +120,7 @@ class Player
   end
 
   def being_attacked
-    visible?(ranged) || @hp < @lasthp
+    visible?(archer) || @hp < @lasthp
   end
 
   def wounded
