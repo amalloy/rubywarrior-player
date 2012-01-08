@@ -1,14 +1,37 @@
 class Player
-  def shoot(dir = :forward)
-    @warrior.look(dir).take(3).each do |space|
-      if space.unit.kind_of? RubyWarrior::Units::Wizard
-        @warrior.shoot!(dir)
-        return true
-      elsif !space.empty?
-        return false
+  def initialize
+    @hp_needed = 0
+    @dirs = [:forward, :backward]
+  end
+
+  def shoot_at(unit)
+    @dirs.each do |dir|
+      @warrior.look(dir).take(3).each do |space|
+        if space.unit.kind_of? unit
+          @warrior.shoot! dir
+          return true
+        elsif !space.empty?
+          break
+        end
       end
     end
-    return false
+    nil
+  end
+  
+  def shoot
+    if can_shoot
+      shoot_at(RubyWarrior::Units::Wizard) || shoot_at(RubyWarrior::Units::Archer)
+    end
+  end
+
+  def can_shoot
+    @warrior.respond_to? :shoot!
+  end
+
+  def scout
+    puts "Before scout: #{@hp_needed}"
+    @hp_needed = [@hp_needed, health_needed].max
+    puts "After scout: #{@hp_needed}"
   end
 
   def play_turn(warrior)
@@ -18,17 +41,27 @@ class Player
     @hp = hp
     @warrior = warrior
 
+    if @fighting and !warrior.feel.enemy?
+      # we just won a fight
+      @hp_needed = 0
+    end
+    @fighting = false
+
+    scout
     if warrior.feel.wall?
       warrior.pivot!
 #    if not @captive_rescued
 #      smart_move :backward
     elsif warrior.feel.enemy?
       warrior.attack!
+      @fighting = true
     elsif shoot
+      puts "shooting"
+      @fighting = true
       # shoot has side effects
     elsif critical and being_attacked
       smart_move(:backward)
-    elsif wounded and !being_attacked and @hp < health_needed
+    elsif wounded and !being_attacked and @hp < @hp_needed
       warrior.rest!
     elsif warrior.feel.captive?
       warrior.rescue!
@@ -54,8 +87,28 @@ class Player
     end
   end
 
+  def ranged
+    lambda do |unit|
+      unit.kind_of? RubyWarrior::Units::Wizard or unit.kind_of? RubyWarrior::Units::Archer
+    end
+  end
+
+  def visible?(pred)
+    @dirs.each do |dir|
+      @warrior.look(dir).each do |space|
+        u = space.unit
+        if u && pred[u]
+          return true
+        elsif !space.empty?
+          break;
+        end
+      end
+    end
+    nil
+  end
+
   def being_attacked
-    @hp < @lasthp
+    visible?(ranged) || @hp < @lasthp
   end
 
   def wounded
@@ -77,7 +130,7 @@ class Player
 
   def damage_budget(u) # how much will killing this hurt?
     {
-      RubyWarrior::Units::Archer => 9,
+      RubyWarrior::Units::Archer => can_shoot ? 6 : 9,
       RubyWarrior::Units::Sludge => 6,
       RubyWarrior::Units::ThickSludge => 12
     }[u.class]
