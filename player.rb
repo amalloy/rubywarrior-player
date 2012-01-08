@@ -13,13 +13,12 @@ class Player
     end
   end
 
-  def shoot_at(unit)
+  def shoot_at(pred)
     @dirs.each do |dir|
       @warrior.look(dir).take(3).each_with_index do |space, i|
-        u = space.unit
-        if archer[u] and i < 2
+        if space.archer? and i < 2
           break # archers should be charged at if closer
-        elsif u.kind_of? unit
+        elsif pred[space]
           @warrior.shoot! dir
           @keep_shooting = arrow_budget(space.unit) - 1
           @shoot_dir = dir
@@ -34,7 +33,7 @@ class Player
   
   def shoot
     if can_shoot
-      shoot_at(RubyWarrior::Units::Wizard) || shoot_at(RubyWarrior::Units::Archer)
+      shoot_at(wizard) || shoot_at(archer)
     end
   end
 
@@ -85,12 +84,6 @@ class Player
     end
   end
 
-  def captive
-    lambda do |unit|
-      unit.kind_of? RubyWarrior::Units::Captive
-    end
-  end
-
   def get_captive
     dir = visible?(captive)
     if dir
@@ -116,16 +109,27 @@ class Player
   end
 
   def archer
-    lambda do |unit|
-      unit.kind_of? RubyWarrior::Units::Archer
+    lambda do |space|
+      space.archer?
+    end
+  end
+
+  def captive
+    lambda do |space|
+      space.captive?
+    end
+  end
+
+  def wizard
+    lambda do |space|
+      space.wizard?
     end
   end
 
   def visible?(pred)
     @dirs.each do |dir|
       @warrior.look(dir).each do |space|
-        u = space.unit
-        if u && pred[u]
+        if pred[space]
           return dir
         elsif !space.empty?
           break;
@@ -178,5 +182,15 @@ class Player
       RubyWarrior::Units::Archer => 3,
       RubyWarrior::Units::Wizard => 1
     }[u.class]
+  end
+end
+
+class RubyWarrior::Space
+  def archer?
+    self.unit.kind_of? RubyWarrior::Units::Archer
+  end
+
+  def wizard?
+    self.unit.kind_of? RubyWarrior::Units::Wizard
   end
 end
