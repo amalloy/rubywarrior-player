@@ -56,7 +56,7 @@ class Player
 
     if @fighting and !warrior.feel.enemy?
       # we just won a fight
-      @hp_needed = 0
+      @hp_needed = stairs_visible? ? 0 : 7  # make sure we can survive a surprise archer
     end
     @fighting = false
 
@@ -141,6 +141,15 @@ class Player
       damage_budget(space.unit) || 0
     end.reduce :+ 
     damage + 1
+  end
+
+  def stairs_visible?
+    @warrior.look.each do |space|
+      if space.stairs?
+        return true
+      end
+    end
+    nil
   end
 
   def damage_budget(u) # how much will killing this hurt?
