@@ -148,7 +148,7 @@ class Player
   end
 
   def health_needed 
-    damage = [:backward, :forward].map do |dir|
+    damage = @dirs.map do |dir|
       @warrior.look(dir)
     end.flatten(1).map do |space|
       damage_budget(space.unit) || 0
