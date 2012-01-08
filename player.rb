@@ -15,8 +15,11 @@ class Player
 
   def shoot_at(unit)
     @dirs.each do |dir|
-      @warrior.look(dir).take(3).each do |space|
-        if space.unit.kind_of? unit
+      @warrior.look(dir).take(3).each_with_index do |space, i|
+        u = space.unit
+        if archer[u] and i < 2
+          break # archers should be charged at if closer
+        elsif u.kind_of? unit
           @warrior.shoot! dir
           @keep_shooting = arrow_budget(space.unit) - 1
           @shoot_dir = dir
